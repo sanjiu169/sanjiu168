@@ -221,10 +221,17 @@ class V6Engine:
         except: pass
         
         # 三合一融合: 手工35% + 投票35% + ML30%
+        # 分歧大时降ML权重，提高投票
+        vote_max = max(votes.values()) / max(1,sum(votes.values()))
+        if vote_max > 0.4:  # 模型意见统一
+            ml_weight = 0.3
+        else:  # 分歧大
+            ml_weight = 0.1
+        
         for t in TYPES:
-            fu[t]=fu[t]*0.35+votes[t]/max(1,sum(votes.values()))*0.35
+            fu[t]=fu[t]*0.4+votes[t]/max(1,sum(votes.values()))*0.4
         if ml_probs:
-            for t in TYPES: fu[t]+=ml_probs.get(t,0.25)*0.3
+            for t in TYPES: fu[t]+=ml_probs.get(t,0.25)*ml_weight
         
         tot2=sum(fu.values());fu={t:v/tot2 for t,v in fu.items()}
         st=sorted(fu.items(),key=lambda x:x[1],reverse=True)
@@ -262,7 +269,7 @@ class V6Engine:
             'mw':{k:f"{v:.1%}" for k,v in mw.items()},
             'similar_count':len(similar) if similar else 0,
             'risk_level':self.risk_level,'consecutive_losses':self.consecutive_losses,
-            'ts':datetime.now().strftime('%m-%d %H:%M:%S')
+            'ts':(datetime.now()+timedelta(hours=8)).strftime('%m-%d %H:%M:%S')
         }
         self.lp.append(pred)
         if len(self.lp)>100: self.lp.pop(0)
