@@ -422,7 +422,7 @@ async def accuracy(u,c):
     await u.message.reply_text(f"总{t}期|命中{h}({h/t:.1%})|近10:{a10:.1%}|近50:{a50:.1%}|近100:{a100:.1%}")
 async def beliefs(u,c):
     b=engine.b;mw=engine.model_weights
-    await u.message.reply_text(f"🧠 信念: 续{b['tc']:.1%} 反{b['tr']:.1%} 冷{b['hc']:.1%}\n📊 权重: 马{mw['markov']:.1%} 似{mw['similar']:.1%} 频{mw['freq']:.1%} 特{mw['feature']:.1%}")
+    await u.message.reply_text("🎯 三九V7.0 | 11特征元学习\n模式记忆表:11668条\n/accuracy 查看命中率")
 
 async def risk(u,c):
     rl={'LOW':'✅低','MEDIUM':'⚠️中','HIGH':'🔴高','CRITICAL':'🚫极高'}
