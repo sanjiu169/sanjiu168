@@ -432,6 +432,26 @@ def main():
     t2.start()
     
     print("🤖 V6.0+ML就绪")
+    
+    # 启动极简HTTP服务器（避免Render超时）
+    from aiohttp import web
+    async def health(request):
+        return web.Response(text="OK")
+    http_app = web.Application()
+    http_app.router.add_get('/', health)
+    
+    import os
+    port = int(os.getenv('PORT', 8080))
+    
+    async def run_http():
+        runner = web.AppRunner(http_app)
+        await runner.setup()
+        site = web.TCPSite(runner, '0.0.0.0', port)
+        await site.start()
+        print(f"HTTP健康检查端口:{port}")
+    
+    loop = asyncio.get_event_loop()
+    loop.create_task(run_http())
     app.run_polling()
 
 if __name__=='__main__':
