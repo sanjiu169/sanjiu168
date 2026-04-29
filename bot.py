@@ -81,6 +81,13 @@ class V6Engine:
         except:
             print("无历史记忆")
     
+    def _get_last_feat_preds(self):
+        result = {}
+        for fname, func in self.feature_models.items():
+            try: result[fname] = func()
+            except: result[fname] = '大单'
+        return result
+    
     def save(self):
         try:
             data={'b':self.b,'lp':self.lp[-100:] if self.lp else [],'pl':self.pl,'model_weights':self.model_weights,'consecutive_losses':self.consecutive_losses,'risk_level':self.risk_level,'local_history':self.local_history[:5000]}
@@ -100,6 +107,82 @@ class V6Engine:
         self.h=h
         if h: self.merge_history(h)
         if len(self.local_history)>=100: self.h=self.local_history[:120]
+    
+    
+    # ===== 11个特征预测模型 =====
+    def _predict_original(self):
+        return self.h[0]['type']
+    
+    def _predict_5y(self):
+        if len(self.h) < 2: return self.h[0]['type']
+        diff = self.h[0]['sum'] - self.h[1]['sum']
+        m5 = ((diff%5)+5)%5
+        if m5 <= 2: return self.h[0]['type']
+        return {'大单':'大双','大双':'小单','小单':'小双','小双':'大单'}.get(self.h[0]['type'],'大单')
+    
+    def _predict_diff_sign(self):
+        if len(self.h) < 2: return self.h[0]['type']
+        diff = self.h[0]['sum'] - self.h[1]['sum']
+        if diff > 0: return '大双' if self.h[0]['sum']>13 else '小双'
+        elif diff < 0: return '大单' if self.h[0]['sum']>13 else '小单'
+        return self.h[0]['type']
+    
+    def _predict_diff_level(self):
+        if len(self.h) < 2: return self.h[0]['type']
+        d = abs(self.h[0]['sum'] - self.h[1]['sum'])
+        if d <= 2: return {'大单':'小双','小双':'大单','大双':'小单','小单':'大双'}.get(self.h[0]['type'],'大单')
+        elif d <= 6: return self.h[0]['type']
+        return {'大单':'大双','大双':'大单','小单':'小双','小双':'小单'}.get(self.h[0]['type'],'大单')
+    
+    def _predict_size_streak(self):
+        streak = 1
+        for i in range(1, min(8,len(self.h))):
+            if (self.h[i]['sum']>13) == (self.h[i-1]['sum']>13): streak += 1
+            else: break
+        opp = {'大单':'小双','小双':'大单','大双':'小单','小单':'大双'}
+        if streak >= 4: return opp.get(self.h[0]['type'],'大单')
+        return self.h[0]['type']
+    
+    def _predict_parity_streak(self):
+        streak = 1
+        for i in range(1, min(8,len(self.h))):
+            if (self.h[i]['sum']%2) == (self.h[i-1]['sum']%2): streak += 1
+            else: break
+        if streak >= 4: return {'单':'双','双':'单'}.get('单' if self.h[0]['sum']%2 else '双','单')+'大' if self.h[0]['sum']>13 else '小'
+        return self.h[0]['type']
+    
+    def _predict_3y_size(self):
+        y3 = self.h[0]['sum'] % 3
+        size = '大' if self.h[0]['sum']>13 else '小'
+        mapping = {(0,'大'):'大单',(0,'小'):'小单',(1,'大'):'大双',(1,'小'):'小双',(2,'大'):'大单',(2,'小'):'小双'}
+        return mapping.get((y3,size),'大单')
+    
+    def _predict_prime(self):
+        s = self.h[0]['sum']
+        is_prime = s > 1 and all(s%i for i in range(2,int(s**0.5)+1))
+        if is_prime: return {'大单':'小单','大双':'小双','小单':'大单','小双':'大双'}.get(self.h[0]['type'],'大单')
+        return self.h[0]['type']
+    
+    def _predict_volatility(self):
+        if len(self.h) < 5: return self.h[0]['type']
+        r5 = [it['sum'] for it in self.h[:5]]
+        vol = sum((s-sum(r5)/5)**2 for s in r5)/5
+        if vol > 20: return {'大单':'小双','小双':'大单','大双':'小单','小单':'大双'}.get(self.h[0]['type'],'大单')
+        return self.h[0]['type']
+    
+    def _predict_tail(self):
+        tail = self.h[0]['sum'] % 10
+        if tail >= 7: return '大单' if tail%2 else '大双'
+        elif tail <= 2: return '小双' if tail%2==0 else '小单'
+        return self.h[0]['type']
+    
+    def _predict_slope(self):
+        if len(self.h) < 4: return self.h[0]['type']
+        sums = [it['sum'] for it in self.h[:4]]
+        up = sum(1 for i in range(1,4) if sums[i-1] < sums[i])
+        if up >= 3: return '大单' if sums[0]>13 else '小单'
+        elif up <= 1: return '大双' if sums[0]>13 else '小双'
+        return self.h[0]['type']
     
     def compute_markov(self):
         if len(self.h)<3: return {t:{t2:0.25 for t2 in TYPES} for t in TYPES}
@@ -392,9 +475,15 @@ async def auto_learn():
                 hit = kh or dh
                 engine.pl.append({'kl':lp['kl'],'db':lp['db'],'ac':ac,'hit':hit})
                 # 更新当前模式的命中统计
-                mode = getattr(engine, 'current_mode', '默认')
+                mode = getattr(engine, 'current_mode', '11特征融合')
                 engine.mode_stats[mode]['total'] += 1
                 if hit: engine.mode_stats[mode]['hits'] += 1
+                # 更新各特征模型表现
+                for fname, pred in engine._get_last_feat_preds().items():
+                    if fname in engine.feature_perf:
+                        engine.feature_perf[fname]['total'] += 1
+                        if pred != engine.h[0]['type']:
+                            engine.feature_perf[fname]['hits'] += 1
                 engine.save()
                 print(f"{'✅' if hit else '❌'} {lp['kl']} vs {ac} | 模式:{mode} | 模式命中率:{engine.mode_stats[mode]['hits']}/{engine.mode_stats[mode]['total']}")
             p=engine.predict()
