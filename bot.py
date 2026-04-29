@@ -332,14 +332,14 @@ async def risk(u,c):
     await u.message.reply_text(f"🛡 风险:{rl.get(engine.risk_level,'?')} | 连败:{engine.consecutive_losses}期")
 
 async def broadcast_on(u,c):
-    global BROADCAST_CHAT_ID
-    BROADCAST_CHAT_ID = u.message.chat_id
+    # global removed
+    BROADCAST_CHAT_ID = u.message.chat_id; open("chat_id.txt","w").write(str(BROADCAST_CHAT_ID))
     with open('chat_id.txt','w') as f: f.write(str(BROADCAST_CHAT_ID))
     await u.message.reply_text("✅ 自动播报已开启")
 
 async def broadcast_off(u,c):
-    global BROADCAST_CHAT_ID
-    BROADCAST_CHAT_ID = None
+    # global removed
+    cid2 = None
     with open('chat_id.txt','w') as f: f.write('')
     await u.message.reply_text("❌ 自动播报已关闭")
 
@@ -409,19 +409,19 @@ def main():
     import threading
     
     # 加载推送目标
-    global BROADCAST_CHAT_ID
+    # global removed
     try:
         with open('chat_id.txt','r') as f:
-            BROADCAST_CHAT_ID = int(f.read().strip())
+            cid2 = int(f.read().strip())
     except:
-        BROADCAST_CHAT_ID = None
+        cid2 = None
     
     async def auto_broadcast():
-        global BROADCAST_CHAT_ID
+        # global removed
         while True:
             try:
-                if BROADCAST_CHAT_ID:
-                    await app.bot.send_message(BROADCAST_CHAT_ID, "🔄 心跳检测，保持在线")
+                if cid2:
+                    await app.bot.send_message(cid, "🔄 心跳检测，保持在线")
                 await asyncio.sleep(840)  # 14分钟一次
             except:
                 await asyncio.sleep(60)
