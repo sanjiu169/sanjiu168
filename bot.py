@@ -430,6 +430,10 @@ async def accuracy(u,c):
     await u.message.reply_text(f"total{t}|hit{h}({h/t:.1%}) 10:{a10:.1%} 50:{a50:.1%}")
     await u.message.reply_text(f"总{t}期|命中{h}({h/t:.1%})\n近10:{a10:.1%}|近50:{a50:.1%}")
 async def risk(u,c):
+    await u.message.reply_text("V7.0")
+
+async def beliefs(u,c):
+    await u.message.reply_text("V7.0 | 11特征元学习")
     rl={'LOW':'✅低','MEDIUM':'⚠️中','HIGH':'🔴高','CRITICAL':'🚫极高'}
     await u.message.reply_text(f"🛡 风险:{rl.get(engine.risk_level,'?')} | 连败:{engine.consecutive_losses}期")
 
@@ -515,7 +519,6 @@ def main():
     app.add_handler(CommandHandler('evaluate',evaluate))
     app.add_handler(CommandHandler('accuracy',accuracy))
     app.add_handler(CommandHandler('beliefs',beliefs))
-    app.add_handler(CommandHandler('risk',risk))
     app.add_handler(CommandHandler('broadcast_on',broadcast_on))
     app.add_handler(CommandHandler('broadcast_off',broadcast_off))
     app.add_handler(CommandHandler('heat',heat))
