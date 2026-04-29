@@ -5,6 +5,7 @@ from collections import defaultdict, Counter
 from datetime import datetime, timedelta
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
+from engine_v7 import PatternMemory, MetaLearner, FEATURES, TYPES, TYPE_NUMS, OPPOSITE
 
 # 元学习器直接从pickle加载，不需要train_model导入
 
@@ -564,5 +565,6 @@ def main():
 
 if __name__=='__main__':
     main()
+ 
  
  
