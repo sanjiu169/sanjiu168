@@ -241,7 +241,22 @@ class V6Engine:
         zf=Counter(item['sum_zone'] for item in self.h[:30]);zt=sum(zf.values());zp={z:zf.get(z,0)/zt for z in SUM_ZONES}
         zs=sorted(zp.items(),key=lambda x:x[1],reverse=True)
         
-        kl=st[0][0];db=[st[1][0],st[2][0]]
+        kl=st[0][0]
+        # 改进双组：优先选最近遗漏的组合
+        opposite = {'大单':'小双','小双':'大单','大双':'小单','小单':'大双'}
+        candidates = [t for t in TYPES if t != kl]
+        # 按遗漏排序
+        cand_miss = [(t, mis.get(t,0)) for t in candidates]
+        cand_miss.sort(key=lambda x: x[1], reverse=True)
+        db = [cand_miss[0][0], opposite.get(kl, cand_miss[1][0])]
+        if db[0] == db[1]:
+            db[1] = cand_miss[1][0]
+        # 动态特码偏移
+        recent_sums = [item['sum'] for item in self.h[:8]]
+        avg_sum = sum(recent_sums)/len(recent_sums) if recent_sums else 14
+        offset = (hash(str(self.h[0]['expect'])) % 5 - 2) * 1.5  # -3到+3
+        target_sum = avg_sum + offset
+        
         tm=[]
         for dt in db[:2]:
             ns=TYPE_NUMS[dt];nwm=[]
@@ -250,7 +265,9 @@ class V6Engine:
                 for it in self.h:
                     if it['sum']==n: break
                     miss+=1
-                nwm.append((n,miss))
+                dist_to_target = abs(n - target_sum)
+                score = miss + 10.0/max(1, dist_to_target)
+                nwm.append((n, score))
             nwm.sort(key=lambda x:x[1],reverse=True)
             for n,_ in nwm[:2]:
                 if n not in tm: tm.append(n)
