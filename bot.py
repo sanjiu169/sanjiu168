@@ -6,8 +6,7 @@ from datetime import datetime, timedelta
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
-sys.path.insert(0, '/data/data/com.termux/files/home')
-from train_model import GradientBooster, SimpleTree
+# 元学习器直接从pickle加载，不需要train_model导入
 
 BOT_TOKEN = "8027828258:AAFlOfT7fS9F99XQWOUchvBNVynpkBpmXm8"
 API_URL = "https://super.pc28998.com/history/JND28?limit=200"
