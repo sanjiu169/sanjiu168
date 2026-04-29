@@ -373,9 +373,14 @@ async def auto_learn():
             if engine.lp and len(engine.h)>0:
                 lp=engine.lp[-1];ac=engine.h[0]['type']
                 kh=ac!=lp['kl'];dt=lp['db'].split('+');dh=ac in [x.strip() for x in dt]
-                engine.pl.append({'kl':lp['kl'],'db':lp['db'],'ac':ac,'hit':kh or dh})
+                hit = kh or dh
+                engine.pl.append({'kl':lp['kl'],'db':lp['db'],'ac':ac,'hit':hit})
+                # 更新当前模式的命中统计
+                mode = getattr(engine, 'current_mode', '默认')
+                engine.mode_stats[mode]['total'] += 1
+                if hit: engine.mode_stats[mode]['hits'] += 1
                 engine.save()
-                print(f"{'✅' if (kh or dh) else '❌'} {lp['kl']} vs {ac}")
+                print(f"{'✅' if hit else '❌'} {lp['kl']} vs {ac} | 模式:{mode} | 模式命中率:{engine.mode_stats[mode]['hits']}/{engine.mode_stats[mode]['total']}")
             p=engine.predict()
             if p:
                 print(f"📊 {p['next_expect']}|{p['kl']}|{p['zone']}|{p['cf']}")
