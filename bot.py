@@ -338,8 +338,7 @@ async def accuracy(u,c):
     t=len(engine.pl);h=sum(1 for r in engine.pl if r['hit'])
     a10=sum(1 for r in engine.pl[-10:] if r['hit'])/min(10,t)
     await u.message.reply_text(f"总{t}期|命中{h}({h/t:.1%})|近10:{a10:.1%}|近50:{a50:.1%}|近100:{a100:.1%}")
-近10:{a10:.1%} | 近50:{a50:.1%} | 近100:{a100:.1%}")
-
+    await u.message.reply_text(f"总{t}期|命中{h}({h/t:.1%})|近10:{a10:.1%}|近50:{a50:.1%}|近100:{a100:.1%}")
 async def beliefs(u,c):
     b=engine.b;mw=engine.model_weights
     await u.message.reply_text(f"🧠 信念: 续{b['tc']:.1%} 反{b['tr']:.1%} 冷{b['hc']:.1%} 随{b['rw']:.1%}\n📊 权重: 马{mw['markov']:.1%} 似{mw['similar']:.1%} 频{mw['freq']:.1%} 特{mw['feature']:.1%}")
