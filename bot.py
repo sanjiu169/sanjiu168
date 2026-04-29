@@ -201,7 +201,7 @@ class V6Engine:
         for model,pred in model_preds.items(): votes[pred]+=3*mw.get(model,0.25)
         
         # 手工融合
-        risk_factor={'LOW':1.0,'MEDIUM':0.8,'HIGH':0.6,'CRITICAL':0.4};rf=risk_factor.get(self.risk_level,0.8)
+        risk_factor={'LOW':1.0,'MEDIUM':0.9,'HIGH':0.7,'CRITICAL':0.5};rf=risk_factor.get(self.risk_level,0.9)
         fu={}
         for t in TYPES:
             fu[t]=(mw['markov']*mp.get(t,0.25)+mw['similar']*sim_probs.get(t,0.25)+mw['freq']*fp.get(t,0)+mw['feature']*feat_pred.get(t,0.25)+bf['tr']*(1.0 if mis[t]>=6 else 0))*rf
