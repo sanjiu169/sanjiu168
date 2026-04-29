@@ -331,6 +331,18 @@ async def risk(u,c):
     rl={'LOW':'✅低','MEDIUM':'⚠️中','HIGH':'🔴高','CRITICAL':'🚫极高'}
     await u.message.reply_text(f"🛡 风险:{rl.get(engine.risk_level,'?')} | 连败:{engine.consecutive_losses}期")
 
+async def broadcast_on(u,c):
+    global BROADCAST_CHAT_ID
+    BROADCAST_CHAT_ID = u.message.chat_id
+    with open('chat_id.txt','w') as f: f.write(str(BROADCAST_CHAT_ID))
+    await u.message.reply_text("✅ 自动播报已开启")
+
+async def broadcast_off(u,c):
+    global BROADCAST_CHAT_ID
+    BROADCAST_CHAT_ID = None
+    with open('chat_id.txt','w') as f: f.write('')
+    await u.message.reply_text("❌ 自动播报已关闭")
+
 async def heat(u,c):
     if not engine.number_heat: await u.message.reply_text('暂无');return
     sh=sorted(engine.number_heat.items(),key=lambda x:x[1].get('heat_score',0),reverse=True)
@@ -365,7 +377,14 @@ async def auto_learn():
                 engine.save()
                 print(f"{'✅' if (kh or dh) else '❌'} {lp['kl']} vs {ac}")
             p=engine.predict()
-            if p: print(f"📊 {p['next_expect']}|{p['kl']}|{p['zone']}|{p['cf']}")
+            if p:
+                print(f"📊 {p['next_expect']}|{p['kl']}|{p['zone']}|{p['cf']}")
+                # 每5期自动推送一次，保持Render不休眠
+                try:
+                    if int(p['next_expect']) % 5 == 0:
+                        # 推送到自己（需要存chat_id）
+                        pass
+                except: pass
             nt=await get_next_open_time()
             if nt:
                 wait=(nt-datetime.now()).total_seconds()+8
@@ -384,10 +403,34 @@ def main():
     app.add_handler(CommandHandler('accuracy',accuracy))
     app.add_handler(CommandHandler('beliefs',beliefs))
     app.add_handler(CommandHandler('risk',risk))
+    app.add_handler(CommandHandler('broadcast_on',broadcast_on))
+    app.add_handler(CommandHandler('broadcast_off',broadcast_off))
     app.add_handler(CommandHandler('heat',heat))
     import threading
+    
+    # 加载推送目标
+    global BROADCAST_CHAT_ID
+    try:
+        with open('chat_id.txt','r') as f:
+            BROADCAST_CHAT_ID = int(f.read().strip())
+    except:
+        BROADCAST_CHAT_ID = None
+    
+    async def auto_broadcast():
+        global BROADCAST_CHAT_ID
+        while True:
+            try:
+                if BROADCAST_CHAT_ID:
+                    await app.bot.send_message(BROADCAST_CHAT_ID, "🔄 心跳检测，保持在线")
+                await asyncio.sleep(840)  # 14分钟一次
+            except:
+                await asyncio.sleep(60)
+    
     t=threading.Thread(target=lambda:(asyncio.new_event_loop().run_until_complete(auto_learn())),daemon=True)
     t.start()
+    t2=threading.Thread(target=lambda:(asyncio.new_event_loop().run_until_complete(auto_broadcast())),daemon=True)
+    t2.start()
+    
     print("🤖 V6.0+ML就绪")
     app.run_polling()
 
