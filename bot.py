@@ -404,26 +404,28 @@ async def predict(u,c):
     except Exception as e: await msg.edit_text(f'错误: {str(e)[:50]}')
 
 async def evaluate(u,c):
+async def evaluate(u,c):
     if engine.lp and len(engine.h)>0:
-        lp=engine.lp[-1];ac=engine.h[0]['type']
-        kh=ac!=lp['kl'];dt=lp['db'].split('+');dh=ac in [x.strip() for x in dt]
-        hit=kh or dh;engine.pl.append({'kl':lp['kl'],'db':lp['db'],'ac':ac,'hit':hit})
+        lp=engine.lp[-1];ac=engine.h[0]["type"]
+        hit=False
+        try:
+            kh=ac!=lp["kl"];dt=lp["db"].split("+");dh=ac in [x.strip() for x in dt]
+            hit=kh or dh
+        except: hit=(ac!=lp.get("kl",""))
+        engine.pl.append({"kl":lp.get("kl",""),"db":lp.get("db",""),"ac":ac,"hit":hit})
         engine.save()
-        st='✅命中' if hit else '❌未中'
-        rc=engine.pl[-10:];a10=sum(1 for r in rc if r['hit'])/len(rc) if rc else 0
-        await u.message.reply_text(f"📋 上期: 预测{lp['kl']}|{lp['db']} 实际{ac} {st}\n近10期:{a10:.0%}")
-    else: await u.message.reply_text('暂无记录')
-
+        st="Y" if hit else "N"
+        rc=engine.pl[-10:];a10=sum(1 for r in rc if r["hit"])/len(rc) if rc else 0
+        await u.message.reply_text(f"上期: {lp.get('kl','?')}|{lp.get('db','?')} 实际{ac} {st}\n近10:{a10:.0%}")
+    else: await u.message.reply_text("no data")
 async def accuracy(u,c):
-    if not engine.pl: await u.message.reply_text('暂无数据');return
-    t=len(engine.pl);h=sum(1 for r in engine.pl if r['hit'])
-    a10=sum(1 for r in engine.pl[-10:] if r['hit'])/min(10,t)
-    await u.message.reply_text(f"总{t}期|命中{h}({h/t:.1%})|近10:{a10:.1%}|近50:{a50:.1%}|近100:{a100:.1%}")
-    await u.message.reply_text(f"总{t}期|命中{h}({h/t:.1%})|近10:{a10:.1%}|近50:{a50:.1%}|近100:{a100:.1%}")
-async def beliefs(u,c):
-    b=engine.b;mw=engine.model_weights
-    await u.message.reply_text("🎯 三九V7.0 | 11特征元学习\n模式记忆表:11668条\n/accuracy 查看命中率")
-
+    if not engine.pl: await u.message.reply_text("no data");return
+    t=len(engine.pl);h=sum(1 for r in engine.pl if r["hit"])
+    a10=sum(1 for r in engine.pl[-10:] if r["hit"])/min(10,t) if t>0 else 0
+    a50=sum(1 for r in engine.pl[-50:] if r["hit"])/min(50,t) if t>0 else 0
+    await u.message.reply_text(f"total{t}|hit{h}({h/t:.1%})\n10:{a10:.1%}|50:{a50:.1%}")
+    a50=sum(1 for r in engine.pl[-50:] if r["hit"])/min(50,t) if t>0 else 0
+    await u.message.reply_text(f"总{t}期|命中{h}({h/t:.1%})\n近10:{a10:.1%}|近50:{a50:.1%}")
 async def risk(u,c):
     rl={'LOW':'✅低','MEDIUM':'⚠️中','HIGH':'🔴高','CRITICAL':'🚫极高'}
     await u.message.reply_text(f"🛡 风险:{rl.get(engine.risk_level,'?')} | 连败:{engine.consecutive_losses}期")
