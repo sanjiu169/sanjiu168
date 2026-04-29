@@ -450,7 +450,8 @@ def main():
         await site.start()
         print(f"HTTP健康检查端口:{port}")
     
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     loop.create_task(run_http())
     app.run_polling()
 
