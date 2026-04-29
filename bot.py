@@ -337,7 +337,8 @@ async def accuracy(u,c):
     if not engine.pl: await u.message.reply_text('暂无数据');return
     t=len(engine.pl);h=sum(1 for r in engine.pl if r['hit'])
     a10=sum(1 for r in engine.pl[-10:] if r['hit'])/min(10,t)
-    await u.message.reply_text(f"📊 总{t}期|命中{h}({h/t:.1%})|近10:{a10:.1%}")
+    await u.message.reply_text(f"📊 总{t}期|命中{h}({h/t:.1%})|总命中率:{h/t:.1%}
+近10:{a10:.1%} | 近50:{a50:.1%} | 近100:{a100:.1%}")
 
 async def beliefs(u,c):
     b=engine.b;mw=engine.model_weights
