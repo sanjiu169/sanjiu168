@@ -52,7 +52,7 @@ async def fetch_data():
 
 class V6Engine:
     def __init__(self):
-        self.h=[];self.b={'tc':0.25,'tr':0.25,'hc':0.25,'rw':0.25}
+        self.h=[];self.b={'tc':0.25,'tr':0.25,'hc':0.25}
         self.lp=[];self.pl=[];self.model_weights={'markov':0.3,'similar':0.25,'freq':0.25,'feature':0.2}
         self.consecutive_losses=0;self.risk_level='LOW'
         self.number_heat={};self.local_history=[]
@@ -221,9 +221,6 @@ class V6Engine:
         rev=sum(1 for i in range(1,len(rc)) if rc[i]['type']!=rc[i-1]['type'])
         fq=Counter(it['type'] for it in rc);mh,mc2=max(fq.values()),min(fq.values())
         ent=0
-        for t in TYPES:
-            p=fq.get(t,0)/len(rc)
-            if p>0: ent-=p*math.log2(p)
         ev={'tc':stk/5 if stk<=5 else 1.0,'tr':rev/(len(rc)-1),'hc':1.0 if mh-mc2>=4 else 0.3,'rw':ent/math.log2(4) if len(rc)>1 else 0.5}
         nb={h:ev.get(h,0.5)*self.b[h] for h in self.b}
         tot=sum(nb.values())
@@ -424,7 +421,7 @@ async def accuracy(u,c):
     await u.message.reply_text(f"总{t}期|命中{h}({h/t:.1%})|近10:{a10:.1%}|近50:{a50:.1%}|近100:{a100:.1%}")
 async def beliefs(u,c):
     b=engine.b;mw=engine.model_weights
-    await u.message.reply_text(f"🧠 信念: 续{b['tc']:.1%} 反{b['tr']:.1%} 冷{b['hc']:.1%} 随{b['rw']:.1%}\n📊 权重: 马{mw['markov']:.1%} 似{mw['similar']:.1%} 频{mw['freq']:.1%} 特{mw['feature']:.1%}")
+    await u.message.reply_text(f"🧠 信念: 续{b['tc']:.1%} 反{b['tr']:.1%} 冷{b['hc']:.1%}\n📊 权重: 马{mw['markov']:.1%} 似{mw['similar']:.1%} 频{mw['freq']:.1%} 特{mw['feature']:.1%}")
 
 async def risk(u,c):
     rl={'LOW':'✅低','MEDIUM':'⚠️中','HIGH':'🔴高','CRITICAL':'🚫极高'}
@@ -567,4 +564,5 @@ def main():
 
 if __name__=='__main__':
     main()
+ 
  
